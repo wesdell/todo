@@ -1,8 +1,5 @@
 package com.wesdell.todoapi.services;
 
-import com.wesdell.todoapi.dto.CreateUserDto;
-import com.wesdell.todoapi.dto.LoginUserDto;
-import com.wesdell.todoapi.dto.UpdateUserDto;
 import com.wesdell.todoapi.entities.User;
 import com.wesdell.todoapi.interfaces.IUserService;
 import com.wesdell.todoapi.repositories.UserRepository;
@@ -11,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -26,40 +24,48 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User register(CreateUserDto createUserDto) {
-        boolean emailExists = userRepository.findByEmail(createUserDto.getEmail()).isPresent();
+    public List<User> getUsers() {
+        return userRepository.findAll();
+    }
+
+    @Override
+    public User register(User user) {
+        boolean emailExists = userRepository.findByEmail(user.getEmail()).isPresent();
         if (emailExists) {
             throw new RuntimeException("Email already exists");
         }
-        String encryptedPassword = passwordEncrypter.encode(createUserDto.getPassword());
-        User user = User.builder()
-            .name(createUserDto.getName())
-            .email(createUserDto.getEmail())
+        String encryptedPassword = passwordEncrypter.encode(user.getPassword());
+        User newUser = User.builder()
+            .name(user.getName())
+            .email(user.getEmail())
             .password(encryptedPassword)
             .build();
-        return userRepository.save(user);
+        return userRepository.save(newUser);
     }
 
     @Override
-    public Optional<User> login(LoginUserDto loginUserDto) {
-        Optional<User> user = userRepository.findByEmail(loginUserDto.getEmail());
-        boolean validPassword = passwordEncrypter.matches(loginUserDto.getPassword(), loginUserDto.getPassword());
-        if (user.isEmpty() || !validPassword) {
+    public Optional<User> login(User userAttemptedToLog) {
+        Optional<User> existingUser = userRepository.findByEmail(userAttemptedToLog.getEmail());
+        if (existingUser.isEmpty()) {
             throw new RuntimeException("Invalid password or email");
         }
-        return user;
+        boolean validPassword = passwordEncrypter.matches(userAttemptedToLog.getPassword(), existingUser.get().getPassword());
+        if (!validPassword) {
+            throw new RuntimeException("Invalid password or email");
+        }
+        return existingUser;
     }
 
     @Override
-    public User update(Long userId, UpdateUserDto updateUserDto) {
+    public User update(Long userId, User updatedUser) {
         Optional<User> existingUser = userRepository.findById(userId);
         if (existingUser.isEmpty()) {
             throw new RuntimeException("User not found");
         }
         User newUpdatedUser = existingUser.get();
-        String newEncryptedPassword = passwordEncrypter.encode(updateUserDto.getPassword());
+        String newEncryptedPassword = passwordEncrypter.encode(updatedUser.getPassword());
         newUpdatedUser.setName(
-            Objects.requireNonNullElse(updateUserDto.getName(), existingUser.get().getName())
+            Objects.requireNonNullElse(updatedUser.getName(), existingUser.get().getName())
         );
         newUpdatedUser.setPassword(
             Objects.requireNonNullElse(newEncryptedPassword, existingUser.get().getPassword())
