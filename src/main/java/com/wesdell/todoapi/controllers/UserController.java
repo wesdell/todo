@@ -1,11 +1,9 @@
 package com.wesdell.todoapi.controllers;
 
-import com.wesdell.todoapi.dto.CreateUserDto;
 import com.wesdell.todoapi.dto.UpdateUserDto;
 import com.wesdell.todoapi.dto.UserDto;
 import com.wesdell.todoapi.mappers.UserMapper;
 import com.wesdell.todoapi.services.UserService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -36,11 +34,6 @@ public class UserController {
             .map(userMapper::toDto)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PostMapping()
-    public UserDto createUser(@Valid @RequestBody CreateUserDto createUserDto) {
-        return userMapper.toDto(userService.register(userMapper.toEntity(createUserDto)));
     }
 
     @PutMapping("/{id}")
