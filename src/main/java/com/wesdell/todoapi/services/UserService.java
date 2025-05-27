@@ -29,7 +29,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User register(User user) {
+    public User create(User user) {
         boolean emailExists = userRepository.findByEmail(user.getEmail()).isPresent();
         if (emailExists) {
             throw new RuntimeException("Email already exists");
@@ -41,19 +41,6 @@ public class UserService implements IUserService {
             .password(encryptedPassword)
             .build();
         return userRepository.save(newUser);
-    }
-
-    @Override
-    public Optional<User> login(User userAttemptedToLog) {
-        Optional<User> existingUser = userRepository.findByEmail(userAttemptedToLog.getEmail());
-        if (existingUser.isEmpty()) {
-            throw new RuntimeException("Invalid password or email");
-        }
-        boolean validPassword = passwordEncrypter.matches(userAttemptedToLog.getPassword(), existingUser.get().getPassword());
-        if (!validPassword) {
-            throw new RuntimeException("Invalid password or email");
-        }
-        return existingUser;
     }
 
     @Override
