@@ -6,35 +6,27 @@ import com.wesdell.todoapi.dto.RegisterUserDto;
 import com.wesdell.todoapi.entities.User;
 import com.wesdell.todoapi.mappers.UserMapper;
 import com.wesdell.todoapi.utils.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import com.wesdell.todoapi.configuration.PasswordEncrypter;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class AuthenticationService {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final UserMapper userMapper;
     private final PasswordEncrypter passwordEncrypter;
-
-    @Autowired
-    public AuthenticationService(
-        UserService userService,
-        JwtUtil jwtUtil,
-        UserMapper userMapper,
-        PasswordEncrypter passwordEncrypter) {
-        this.userService = userService;
-        this.jwtUtil = jwtUtil;
-        this.userMapper = userMapper;
-        this.passwordEncrypter = passwordEncrypter;
-    }
+    private final AuthenticationManager authenticationManager;
 
     public AuthenticationDto register(RegisterUserDto registerUserDto) {
         User user = userService.create(userMapper.toEntity(registerUserDto));
         String token = jwtUtil.generateJwtToken(user);
-        return new AuthenticationDto(token);
+        return AuthenticationDto.builder().token(token).build();
     }
 
     public AuthenticationDto login(LoginUserDto loginUserDto) {
@@ -46,10 +38,17 @@ public class AuthenticationService {
 
         boolean validPassword = passwordEncrypter.passwordEncoder().matches(userAttempt.getPassword(), existingUser.get().getPassword());
         if (!validPassword) {
-            throw new RuntimeException("Invalid credentials");
+            throw new RuntimeException("Invalid email or password");
         }
 
+        authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(
+                loginUserDto.getEmail(),
+                loginUserDto.getPassword()
+            )
+        );
+
         String token = jwtUtil.generateJwtToken(existingUser.get());
-        return new AuthenticationDto(token);
+        return AuthenticationDto.builder().token(token).build();
     }
 }
