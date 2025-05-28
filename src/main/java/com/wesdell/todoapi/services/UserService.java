@@ -48,28 +48,22 @@ public class UserService implements IUserService, UserDetailsService {
 
     @Override
     public User update(Long userId, User updatedUser) {
-        Optional<User> existingUser = userRepository.findById(userId);
-        if (existingUser.isEmpty()) {
-            throw new RuntimeException("User not found");
-        }
-        User newUpdatedUser = existingUser.get();
+        User existingUser = userRepository.findById(userId).orElseThrow();
         String newEncryptedPassword = passwordEncrypter.encode(updatedUser.getPassword());
-        newUpdatedUser.setName(
-            Objects.requireNonNullElse(updatedUser.getName(), existingUser.get().getName())
+
+        existingUser.setName(
+            Objects.requireNonNullElse(updatedUser.getName(), existingUser.getName())
         );
-        newUpdatedUser.setPassword(
-            Objects.requireNonNullElse(newEncryptedPassword, existingUser.get().getPassword())
+        existingUser.setPassword(
+            Objects.requireNonNullElse(newEncryptedPassword, existingUser.getPassword())
         );
-        return userRepository.save(newUpdatedUser);
+
+        return userRepository.save(existingUser);
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
-        Optional<User> user = userRepository.findByEmail(email);
-        if (user.isEmpty()) {
-            throw new EntityNotFoundException("User not found");
-        }
-        return user;
+        return userRepository.findByEmail(email);
     }
 
     @Override
