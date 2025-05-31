@@ -13,4 +13,7 @@ public class CreateTaskDto {
     @NotBlank(message = "Description is required")
     @Size(min = 3, max = 100, message = "Description must be between 3 and 200 characters")
     private String description;
+
+    @NotBlank(message = "Status is required")
+    private String status;
 }

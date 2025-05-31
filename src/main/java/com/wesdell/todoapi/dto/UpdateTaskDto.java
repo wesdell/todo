@@ -14,6 +14,6 @@ public class UpdateTaskDto {
     @Size(min = 3, max = 100, message = "Description must be between 3 and 200 characters")
     private String description;
 
-    @NotBlank(message = "El estado es obligatorio")
+    @NotBlank(message = "Status is required")
     private String status;
 }
